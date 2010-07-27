@@ -1,0 +1,28 @@
+body {
+  font-family: Georgia, "Times New Roman",
+        Times, serif;
+}
+ul.publist {
+  list-style-type: none;
+  padding: 10;
+  margin: 10; }
+
+li.groupref {
+    display: inline;
+    list-style-type: none;
+    padding-right: 20px;    
+}
+
+li.pubitem {
+  list-style-type: none;
+  padding: 10;
+  margin: 10; }
+
+.grouptitle { 
+font-size:2em;
+}
+
+.title { 
+font-weight:bold; 
+}
+
