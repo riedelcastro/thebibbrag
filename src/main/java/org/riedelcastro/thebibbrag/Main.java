@@ -69,7 +69,7 @@ public class Main {
 
     private static String bibtex(BibtexEntry entry) {
         StringBuffer result = new StringBuffer();
-        result.append(String.format("@%s{\n", entry.getEntryKey()));
+        result.append(String.format("@%s{%s,\n", entry.getEntryType(),entry.getEntryKey()));
         for (Object key : entry.getFields().keySet()) {
             String keyString = key.toString();
             if (!keyString.startsWith("date") && !keyString.startsWith("url"))
