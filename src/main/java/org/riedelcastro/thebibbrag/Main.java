@@ -144,6 +144,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException, ParseException {
         setupMonthMapping();
+        String authorNameFilter = System.getProperty("name","Riedel");
         BibtexFile bib = new BibtexFile();
         BibtexParser parser = new BibtexParser(false);
         parser.parse(bib, new FileReader(args[0]));
@@ -176,7 +177,7 @@ public class Main {
                 BibtexEntry entry = (BibtexEntry) o;
                 String author = normalize(entry.getFieldValue("author"));
                 String year = normalize(entry.getFieldValue("year"));
-                if (!author.contains("Riedel") || year.equals("N/A")) continue;
+                if (!author.contains(authorNameFilter) || year.equals("N/A")) continue;
                 BibtexAbstractValue value = entry.getFieldValue(groupBy);
                 if (value != null) {
                     for (String groupKey : normalize(value).split(",")) {
