@@ -19,8 +19,8 @@ public class Main {
 
     public static String normalize(String input) {
         return input.replace("{", "").replace("}", "")
-                .replace("\\\"u", "Ÿ")
-                .replace("\\\"a", "Š");
+                .replace("\\\"u", "ï¿½")
+                .replace("\\\"a", "ï¿½");
     }
 
     public static String normalize(BibtexAbstractValue value) {
@@ -228,6 +228,12 @@ public class Main {
 
         overviewHTML.println(String.format("<span class=\"year\">%s</span>",
                 year));
+
+        BibtexAbstractValue note = entry.getFieldValue("note");
+
+        if (note != null){
+            overviewHTML.println(String.format("<span class=\"note\">%s</span>",normalize(note)));
+        }
 
         BibtexAbstractValue url = entry.getFieldValue("url");
         if (url != null) {
