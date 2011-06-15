@@ -226,14 +226,15 @@ public class Main {
                     normalize(entry.getFieldValue("school"))));
         }
 
-        overviewHTML.println(String.format("<span class=\"year\">%s</span>",
-                year));
 
         BibtexAbstractValue note = entry.getFieldValue("note");
 
         if (note != null){
             overviewHTML.println(String.format("<span class=\"note\">%s</span>",normalize(note)));
         }
+
+        overviewHTML.println(String.format("<span class=\"year\">%s</span>",
+                year));
 
         BibtexAbstractValue url = entry.getFieldValue("url");
         if (url != null) {
