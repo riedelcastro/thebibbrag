@@ -5,10 +5,7 @@ import bibtex.parser.BibtexParser;
 import bibtex.parser.ParseException;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author sriedel
@@ -108,7 +105,45 @@ public class Main {
 
     }
 
+    private static HashMap<String,String> monthMapping = new HashMap<String,String>();
+
+    private static void setupMonthMapping() {
+        monthMapping.put("1","01");
+        monthMapping.put("2","02");
+        monthMapping.put("3","03");
+        monthMapping.put("4","04");
+        monthMapping.put("5","05");
+        monthMapping.put("6","06");
+        monthMapping.put("7","07");
+        monthMapping.put("8","08");
+        monthMapping.put("9","09");
+    }
+
+    private static String sortKey(BibtexEntry entry) {
+        BibtexAbstractValue month = entry.getFieldValue("month");
+        if (month != null) {
+            String m = normalize(month).trim().toLowerCase();
+            String mapped = monthMapping.get(m);
+            return mapped == null ? m : mapped;
+        }
+        return normalize(entry.getFieldValue("title"));
+    }
+
+    private static List<BibtexEntry> sortEntries(List<BibtexEntry> entries) {
+        ArrayList<BibtexEntry> result = new ArrayList<BibtexEntry>(entries);
+        Collections.sort(result, new Comparator<BibtexEntry>() {
+            public int compare(BibtexEntry bibtexEntry1, BibtexEntry bibtexEntry2) {
+                String key1 = sortKey(bibtexEntry1);
+                String key2 = sortKey(bibtexEntry2);
+                return key1.compareTo(key2);
+            }
+        });
+
+        return result;
+    }
+
     public static void main(String[] args) throws IOException, ParseException {
+        setupMonthMapping();
         BibtexFile bib = new BibtexFile();
         BibtexParser parser = new BibtexParser(false);
         parser.parse(bib, new FileReader(args[0]));
@@ -175,7 +210,7 @@ public class Main {
                     "<span class=\"grouptitle\">%s</span></a>\n",
                     groupKey, groupKey));
             overviewHTML.println("<ul class=\"itemlist\">\n");
-            for (BibtexEntry entry : grouping.get(groupKey)) {
+            for (BibtexEntry entry : sortEntries(grouping.get(groupKey))) {
 
                 BibtexAbstractValue title = entry.getFieldValue("title");
                 if (title != null) {
@@ -230,7 +265,7 @@ public class Main {
         BibtexAbstractValue note = entry.getFieldValue("note");
 
         if (note != null){
-            overviewHTML.println(String.format("<span class=\"note\">%s</span>",normalize(note)));
+            overviewHTML.println(String.format("<span class=\"note\">%s</span>", normalize(note)));
         }
 
         overviewHTML.println(String.format("<span class=\"year\">%s</span>",
