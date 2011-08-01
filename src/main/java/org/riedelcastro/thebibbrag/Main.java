@@ -66,7 +66,7 @@ public class Main {
 
     private static String bibtex(BibtexEntry entry) {
         StringBuffer result = new StringBuffer();
-        result.append(String.format("@%s{%s,\n", entry.getEntryType(),entry.getEntryKey()));
+        result.append(String.format("@%s{%s,\n", entry.getEntryType(), entry.getEntryKey()));
         for (Object key : entry.getFields().keySet()) {
             String keyString = key.toString();
             if (!keyString.startsWith("date") && !keyString.startsWith("url"))
@@ -105,18 +105,31 @@ public class Main {
 
     }
 
-    private static HashMap<String,String> monthMapping = new HashMap<String,String>();
+    private static HashMap<String, String> monthMapping = new HashMap<String, String>();
+
 
     private static void setupMonthMapping() {
-        monthMapping.put("1","01");
-        monthMapping.put("2","02");
-        monthMapping.put("3","03");
-        monthMapping.put("4","04");
-        monthMapping.put("5","05");
-        monthMapping.put("6","06");
-        monthMapping.put("7","07");
-        monthMapping.put("8","08");
-        monthMapping.put("9","09");
+        monthMapping.put("1", "01");
+        monthMapping.put("2", "02");
+        monthMapping.put("3", "03");
+        monthMapping.put("4", "04");
+        monthMapping.put("5", "05");
+        monthMapping.put("6", "06");
+        monthMapping.put("7", "07");
+        monthMapping.put("8", "08");
+        monthMapping.put("9", "09");
+        monthMapping.put("january", "01");
+        monthMapping.put("february", "02");
+        monthMapping.put("march", "03");
+        monthMapping.put("april", "04");
+        monthMapping.put("may", "05");
+        monthMapping.put("june", "06");
+        monthMapping.put("july", "07");
+        monthMapping.put("august", "08");
+        monthMapping.put("september", "09");
+        monthMapping.put("october", "10");
+        monthMapping.put("november", "11");
+        monthMapping.put("december", "12");
     }
 
     private static String sortKey(BibtexEntry entry) {
@@ -144,7 +157,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException, ParseException {
         setupMonthMapping();
-        String authorNameFilter = System.getProperty("name","Riedel");
+        String authorNameFilter = System.getProperty("name", "Riedel");
         BibtexFile bib = new BibtexFile();
         BibtexParser parser = new BibtexParser(false);
         parser.parse(bib, new FileReader(args[0]));
@@ -175,7 +188,7 @@ public class Main {
         for (Object o : bib.getEntries()) {
             if (o instanceof BibtexEntry) {
                 BibtexEntry entry = (BibtexEntry) o;
-                String author = normalize(entry.getFieldValue("author"));
+                String author = prettyfyAuthor(normalize(entry.getFieldValue("author")));
                 String year = normalize(entry.getFieldValue("year"));
                 if (!author.contains(authorNameFilter) || year.equals("N/A")) continue;
                 BibtexAbstractValue value = entry.getFieldValue(groupBy);
@@ -215,7 +228,7 @@ public class Main {
 
                 BibtexAbstractValue title = entry.getFieldValue("title");
                 if (title != null) {
-                    String author = normalize(entry.getFieldValue("author"));
+                    String author = prettyfyAuthor(normalize(entry.getFieldValue("author")));
                     String year = normalize(entry.getFieldValue("year"));
                     String stringTitle = normalize(entry.getFieldValue("title"));
                     if (!author.contains("Riedel") || year.equals("N/A") || stringTitle.contains("http")) continue;
@@ -238,8 +251,19 @@ public class Main {
 
     }
 
+    private static String prettyfyAuthor(String authorString) {
+        String resultOld = authorString;
+        String resultNew = resultOld.replaceFirst(" and ", ", ");
+        while(resultNew.contains(" and ")) {
+            resultOld = resultNew;
+            resultNew = resultOld.replaceFirst(" and ", ", ");
+        }
+        return resultOld;
+    }
+
+
     private static void printBibItem(PrintStream overviewHTML, BibtexEntry entry) {
-        String author = normalize(entry.getFieldValue("author"));
+        String author = prettyfyAuthor(normalize(entry.getFieldValue("author")));
         String year = normalize(entry.getFieldValue("year"));
         String stringTitle = normalize(entry.getFieldValue("title"));
         System.out.println(stringTitle);
@@ -263,14 +287,14 @@ public class Main {
         }
 
 
-        BibtexAbstractValue note = entry.getFieldValue("note");
-
-        if (note != null){
-            overviewHTML.println(String.format("<span class=\"note\">%s</span>", normalize(note)));
-        }
-
         overviewHTML.println(String.format("<span class=\"year\">%s</span>",
                 year));
+
+        BibtexAbstractValue note = entry.getFieldValue("webnote");
+
+        if (note != null) {
+            overviewHTML.println(String.format("<span class=\"note\">%s</span>", normalize(note)));
+        }
 
         BibtexAbstractValue url = entry.getFieldValue("url");
         if (url != null) {
