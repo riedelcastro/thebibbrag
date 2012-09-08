@@ -3,8 +3,12 @@ package org.riedelcastro.thebibbrag;
 import bibtex.dom.*;
 import bibtex.parser.BibtexParser;
 import bibtex.parser.ParseException;
+import com.lexicalscope.jewel.cli.CliFactory;
+import com.lexicalscope.jewel.cli.Option;
+
 
 import java.io.*;
+import java.net.URL;
 import java.util.*;
 
 /**
@@ -33,7 +37,7 @@ public class Main {
         if (value instanceof BibtexPersonList) {
             BibtexPersonList personList = (BibtexPersonList) value;
             int index = 0;
-            StringBuffer list = new StringBuffer();
+            StringBuilder list = new StringBuilder();
             for (Object o : personList.getList()) {
                 if (o instanceof BibtexPerson) {
                     if (index > 0) list.append(", ");
@@ -106,6 +110,8 @@ public class Main {
     }
 
     private static HashMap<String, String> monthMapping = new HashMap<String, String>();
+    private static HashMap<String, URL> authorHomepages = new HashMap<String, URL>();
+    private static String authorNameFilter = null;
 
 
     private static void setupMonthMapping() {
@@ -132,6 +138,10 @@ public class Main {
         monthMapping.put("december", "12");
     }
 
+    private static void setupAuthorHomepages(Map<String, URL> map) {
+        authorHomepages.putAll(map);
+    }
+
     private static String sortKey(BibtexEntry entry) {
         BibtexAbstractValue month = entry.getFieldValue("month");
         if (month != null) {
@@ -155,21 +165,82 @@ public class Main {
         return result;
     }
 
+    interface CommandLineOptions {
+        @Option(shortName = "b", description = "The bibtex file to read.")
+        File getBibFile();
+
+        @Option(shortName = "g", defaultValue = "year", description = "The key to group articles by.")
+        String getGroupBy();
+
+        @Option(shortName = "t", description = "The target directory.")
+        File getTargetDir();
+
+        @Option(shortName = "a", defaultValue = "Riedel", description = "the author name to filter the bibtex file with.")
+        String getAuthorName();
+
+        @Option(defaultToNull = true, description = "File with author name to homepage mapping.")
+        File getAuthorHomepages();
+
+        @Option(description = "The Preamble to put before the generated file")
+        File getPreamble();
+
+        boolean isPreamble();
+
+        @Option(description = "The Postable to put after the generated file")
+        File getPostamble();
+
+        boolean isPostamble();
+
+        @Option(helpRequest = true, description = "display help", shortName = "h")
+        boolean getHelp();
+
+    }
+
+    public static Map<String, URL> loadAuthorHomepageMapping(File file) throws IOException {
+        HashMap<String, URL> result = new HashMap<String, URL>();
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+
+        for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+            if (!"".equals(line.trim())) {
+                String[] fields = line.split("\t");
+                URL url = new URL(fields[fields.length - 1]);
+                for (int i = 0; i < fields.length - 1; ++i) {
+                    String[] names = fields[i].split(" ");
+                    StringBuilder reverse = new StringBuilder();
+                    reverse.append(names[names.length - 1]);
+                    reverse.append(", ");
+                    for (int j = 0; j < names.length - 1; j++) reverse.append(names[j]);
+                    result.put(fields[i], url);
+                    result.put(reverse.toString(), url);
+                }
+            }
+        }
+
+        return result;
+    }
+
     public static void main(String[] args) throws IOException, ParseException {
+
+        final CommandLineOptions opts = CliFactory.parseArguments(CommandLineOptions.class, args);
+
         setupMonthMapping();
-        String authorNameFilter = System.getProperty("name", "Riedel");
+        if (opts.getAuthorHomepages() != null)
+            setupAuthorHomepages(loadAuthorHomepageMapping(opts.getAuthorHomepages()));
+
+        System.out.println(authorHomepages.toString());
+
+        authorNameFilter = opts.getAuthorName();
         BibtexFile bib = new BibtexFile();
         BibtexParser parser = new BibtexParser(false);
-        parser.parse(bib, new FileReader(args[0]));
+        parser.parse(bib, new FileReader(opts.getBibFile()));
         for (ParseException e : parser.getExceptions()) {
             System.out.println(e.toString());
         }
-        String targetDirString = args[1];
-        String groupBy = args[2];
-        String preamble = args.length > 3 ? readFileAsString(args[3]) : Main.preamble;
-        String postamble = args.length > 3 ? readFileAsString(args[4]) : Main.postamble;
+        File targetDir = opts.getTargetDir();
+        String groupBy = opts.getGroupBy();
+        String preamble = opts.isPreamble() ? readFileAsString(opts.getPreamble().getAbsolutePath()) : Main.preamble;
+        String postamble = opts.isPostamble() ? readFileAsString(opts.getPostamble().getAbsolutePath()) : Main.postamble;
 
-        File targetDir = new File(targetDirString);
         File details = new File(targetDir, "details");
         details.mkdirs();
         PrintStream overviewHTML = new PrintStream(new File(targetDir, "all.html"), "UTF-8");
@@ -188,7 +259,7 @@ public class Main {
         for (Object o : bib.getEntries()) {
             if (o instanceof BibtexEntry) {
                 BibtexEntry entry = (BibtexEntry) o;
-                String author = prettyfyAuthor(normalize(entry.getFieldValue("author")));
+                String author = prettifyAuthor(normalize(entry.getFieldValue("author")));
                 String year = normalize(entry.getFieldValue("year"));
                 if (!author.contains(authorNameFilter) || year.equals("N/A")) continue;
                 BibtexAbstractValue value = entry.getFieldValue(groupBy);
@@ -228,7 +299,7 @@ public class Main {
 
                 BibtexAbstractValue title = entry.getFieldValue("title");
                 if (title != null) {
-                    String author = prettyfyAuthor(normalize(entry.getFieldValue("author")));
+                    String author = prettifyAuthor(normalize(entry.getFieldValue("author")));
                     String year = normalize(entry.getFieldValue("year"));
                     String stringTitle = normalize(entry.getFieldValue("title"));
                     if (!author.contains("Riedel") || year.equals("N/A") || stringTitle.contains("http")) continue;
@@ -251,10 +322,10 @@ public class Main {
 
     }
 
-    private static String prettyfyAuthor(String authorString) {
+    private static String prettifyAuthor(String authorString) {
         String resultOld = authorString;
         String resultNew = resultOld.replaceFirst(" and ", ", ");
-        while(resultNew.contains(" and ")) {
+        while (resultNew.contains(" and ")) {
             resultOld = resultNew;
             resultNew = resultOld.replaceFirst(" and ", ", ");
         }
@@ -263,15 +334,22 @@ public class Main {
 
 
     private static void printBibItem(PrintStream overviewHTML, BibtexEntry entry) {
-        String author = prettyfyAuthor(normalize(entry.getFieldValue("author")));
+        String author = prettifyAuthor(normalize(entry.getFieldValue("author")));
         String year = normalize(entry.getFieldValue("year"));
         String stringTitle = normalize(entry.getFieldValue("title"));
         System.out.println(stringTitle);
-        System.out.println(normalize(author));
+        String withHomepages = normalize(author);
+        for (Map.Entry<String, URL> mapEntry : authorHomepages.entrySet()) {
+            String authorLink = mapEntry.getKey().contains(authorNameFilter) ?
+                    String.format("<a href=\"%s\"><i>%s</i></a>", mapEntry.getValue().toString(), mapEntry.getKey()):
+                    String.format("<a href=\"%s\">%s</a>", mapEntry.getValue().toString(), mapEntry.getKey());
+            withHomepages = withHomepages.replaceFirst(mapEntry.getKey(), authorLink);
+        }
+        System.out.println(withHomepages);
         overviewHTML.println(String.format("<span class=\"title\">%s</span>, ",
                 stringTitle));
         overviewHTML.println(String.format("<span class=\"author\">%s</span>, ",
-                author));
+                withHomepages));
         if (entry.getEntryType().startsWith("inproceedings")) {
             overviewHTML.println(String.format("<span class=\"booktitle\">%s</span>",
                     normalize(entry.getFieldValue("booktitle"))));
