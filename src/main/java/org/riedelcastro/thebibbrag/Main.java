@@ -158,7 +158,7 @@ public class Main {
             public int compare(BibtexEntry bibtexEntry1, BibtexEntry bibtexEntry2) {
                 String key1 = sortKey(bibtexEntry1);
                 String key2 = sortKey(bibtexEntry2);
-                return key1.compareTo(key2);
+                return -key1.compareTo(key2);
             }
         });
 
