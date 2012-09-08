@@ -69,7 +69,7 @@ public class Main {
             "</body></html>";
 
     private static String bibtex(BibtexEntry entry) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         result.append(String.format("@%s{%s,\n", entry.getEntryType(), entry.getEntryKey()));
         for (Object key : entry.getFields().keySet()) {
             String keyString = key.toString();
