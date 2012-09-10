@@ -1,7 +1,7 @@
 The Bib Brag
 ============
 
-A simple tool for converting your bib file into html.
+A simple tool for converting your bib file into html pages.
 
 An example output can be seen [here](http://riedelcastro.github.com/publications/all.html). To generate this output
 I ran the command
