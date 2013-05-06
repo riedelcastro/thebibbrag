@@ -13,4 +13,4 @@ java -jar thebibbrag-1.0-SNAPSHOT-standalone.jar -b riedel.bib -t $PWD \\
 
 in this [directory](https://github.com/riedelcastro/riedelcastro.github.com/tree/master/publications). Note
 that the bibtex file is **not** in the directory. This example shows how `thebibbrag` generates
-html for a jekyll site. To this end the pre and post-ample are used to turn the generated output into jekyll pages.
+html for a jekyll site. To this end the pre and post-amble are used to turn the generated output into jekyll pages.

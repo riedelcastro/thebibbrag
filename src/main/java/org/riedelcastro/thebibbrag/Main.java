@@ -291,8 +291,8 @@ public class Main {
         overviewHTML.println("<ul class=\"publist\">\n");
 
         for (String groupKey : sorted) {
-            overviewHTML.println(String.format("<li class=\"group\"><a name=\"%s\">" +
-                    "<span class=\"grouptitle\">%s</span></a>\n",
+            overviewHTML.println(String.format("<li class=\"group\" id=\"%s\">" +
+                    "<span class=\"grouptitle\">%s</span>\n",
                     groupKey, groupKey));
             overviewHTML.println("<ul class=\"itemlist\">\n");
             for (BibtexEntry entry : sortEntries(grouping.get(groupKey))) {
