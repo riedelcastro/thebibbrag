@@ -81,7 +81,7 @@ public class Main {
         return result.toString();
     }
 
-    private static String createPerPubHTML(File dir, BibtexEntry entry, String preamble, String postamble)
+    private static String createPerPubHTML(File dir, BibtexEntry entry, String preamble, String postamble, CommandLineOptions opt)
             throws FileNotFoundException, UnsupportedEncodingException {
         String entryKey = entry.getEntryKey();
         String author = normalize(entry.getFieldValue("author"));
@@ -92,7 +92,7 @@ public class Main {
 
         html.println(preamble);
 //        html.println(String.format("<h2>Details</h2>"));
-        printBibItem(html, entry);
+        printBibItem(html, entry, opt);
 
 //        html.println(String.format("<h2>Bibtex</h2>"));
         html.println("<blockquote><pre>");
@@ -177,6 +177,9 @@ public class Main {
 
         @Option(shortName = "a", defaultValue = "Riedel", description = "the author name to filter the bibtex file with.")
         String getAuthorName();
+
+        @Option(shortName = "u", defaultValue = "http://www.riedelcastro.org", description = "The root URL to prepend to unqualified paper URLS ")
+        String getRootURL();
 
         @Option(defaultToNull = true, description = "File with author name to homepage mapping.")
         File getAuthorHomepages();
@@ -303,9 +306,9 @@ public class Main {
                     String year = normalize(entry.getFieldValue("year"));
                     String stringTitle = normalize(entry.getFieldValue("title"));
                     if (!author.contains("Riedel") || year.equals("N/A") || stringTitle.contains("http")) continue;
-                    String filename = createPerPubHTML(details, entry, preamble, postamble);
+                    String filename = createPerPubHTML(details, entry, preamble, postamble, opts);
                     overviewHTML.println("<li class=\"pubitem\">");
-                    printBibItem(overviewHTML, entry);
+                    printBibItem(overviewHTML, entry, opts);
                     overviewHTML.println(String.format("[<a href=\"details/%s\">details</a>]", filename));
                     overviewHTML.println("</li>");
 
@@ -333,7 +336,7 @@ public class Main {
     }
 
 
-    private static void printBibItem(PrintStream overviewHTML, BibtexEntry entry) {
+    private static void printBibItem(PrintStream overviewHTML, BibtexEntry entry, CommandLineOptions opt) {
         String author = prettifyAuthor(normalize(entry.getFieldValue("author")));
         String year = normalize(entry.getFieldValue("year"));
         String stringTitle = normalize(entry.getFieldValue("title"));
@@ -341,7 +344,7 @@ public class Main {
         String withHomepages = normalize(author);
         for (Map.Entry<String, URL> mapEntry : authorHomepages.entrySet()) {
             String authorLink = mapEntry.getKey().contains(authorNameFilter) ?
-                    String.format("<a href=\"%s\"><i>%s</i></a>", mapEntry.getValue().toString(), mapEntry.getKey()):
+                    String.format("<a href=\"%s\"><i>%s</i></a>", mapEntry.getValue().toString(), mapEntry.getKey()) :
                     String.format("<a href=\"%s\">%s</a>", mapEntry.getValue().toString(), mapEntry.getKey());
             withHomepages = withHomepages.replaceFirst(mapEntry.getKey(), authorLink);
         }
@@ -376,7 +379,9 @@ public class Main {
 
         BibtexAbstractValue url = entry.getFieldValue("url");
         if (url != null) {
-            overviewHTML.println(String.format("[<a href=\"%s\">pdf</a>]", normalize(url)));
+            String normalized = normalize(url);
+            String qualified = normalized.startsWith("http") ? normalized : opt.getRootURL() + "/" + normalized;
+                    overviewHTML.println(String.format("[<a href=\"%s\">pdf</a>]", qualified));
         }
     }
 
