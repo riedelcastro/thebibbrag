@@ -305,7 +305,7 @@ public class Main {
                     String author = prettifyAuthor(normalize(entry.getFieldValue("author")));
                     String year = normalize(entry.getFieldValue("year"));
                     String stringTitle = normalize(entry.getFieldValue("title"));
-                    if (!author.contains("Riedel") || year.equals("N/A") || stringTitle.contains("http")) continue;
+                    if (!author.contains(authorNameFilter) || year.equals("N/A") || stringTitle.contains("http")) continue;
                     String filename = createPerPubHTML(details, entry, preamble, postamble, opts);
                     overviewHTML.println("<li class=\"pubitem\">");
                     printBibItem(overviewHTML, entry, opts);
